@@ -5,8 +5,18 @@ workflows:
     environment:
       xcode: latest
     scripts:
-      - name: Reset Package.resolved
+      - name: Patch swift-transformers version
         script: |
+          # Заменяем старый диапазон версии на совместимый с mlx-swift-examples
+          sed -i '' \
+            's/"swift-transformers" : "0\.1\.17\.\.< *1\.0\.0"/"swift-transformers" : "1.1.0"..<"1.2.0"/g' \
+            fullmoon.xcodeproj/project.pbxproj
+          
+          # На случай другого формата записи в pbxproj
+          sed -i '' \
+            's/upToNextMajorVersion.*swift-transformers.*0\.1/upToNextMinorVersion from: "1.1.0"/g' \
+            fullmoon.xcodeproj/project.pbxproj
+          
           find . -name "Package.resolved" -delete
       - name: Resolve Swift packages
         script: |
