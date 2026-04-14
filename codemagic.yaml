@@ -5,6 +5,9 @@ workflows:
     environment:
       xcode: latest
     scripts:
+      - name: Reset Package.resolved
+        script: |
+          find . -name "Package.resolved" -delete
       - name: Resolve Swift packages
         script: |
           xcodebuild -resolvePackageDependencies \
