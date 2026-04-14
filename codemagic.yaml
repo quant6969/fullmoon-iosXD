@@ -7,16 +7,10 @@ workflows:
     scripts:
       - name: Patch swift-transformers version
         script: |
-          # Заменяем старый диапазон версии на совместимый с mlx-swift-examples
-          sed -i '' \
-            's/"swift-transformers" : "0\.1\.17\.\.< *1\.0\.0"/"swift-transformers" : "1.1.0"..<"1.2.0"/g' \
-            fullmoon.xcodeproj/project.pbxproj
+          # Находим строку с конкретной старой версией и меняем на нужную для MLX
+          sed -i '' 's/minimumVersion = 0.1.17;/minimumVersion = 1.1.0;/g' fullmoon.xcodeproj/project.pbxproj
           
-          # На случай другого формата записи в pbxproj
-          sed -i '' \
-            's/upToNextMajorVersion.*swift-transformers.*0\.1/upToNextMinorVersion from: "1.1.0"/g' \
-            fullmoon.xcodeproj/project.pbxproj
-          
+          # Удаляем кэш разрешенных зависимостей, чтобы SPM скачал их заново с новыми правилами
           find . -name "Package.resolved" -delete
       - name: Resolve Swift packages
         script: |
