@@ -3,15 +3,28 @@ workflows:
     name: iOS Workflow
     max_build_duration: 60
     environment:
-      flutter: master
       xcode: latest
-      cocoapods: default
     scripts:
-      - name: Get Flutter packages
+      - name: Resolve Swift packages
         script: |
-          flutter packages pub get
-      - name: Flutter build ipa
+          xcodebuild -resolvePackageDependencies \
+            -project fullmoon.xcodeproj \
+            -scheme fullmoon
+      - name: Build unsigned IPA
         script: |
-          flutter build ipa --release --no-codesign
+          xcodebuild archive \
+            -project fullmoon.xcodeproj \
+            -scheme fullmoon \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$CM_BUILD_DIR/fullmoon.xcarchive" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO
+          
+          mkdir -p Payload
+          cp -r "$CM_BUILD_DIR/fullmoon.xcarchive/Products/Applications/fullmoon.app" Payload/
+          zip -r fullmoon.ipa Payload
     artifacts:
-      - build/ios/ipa/*.ipa
+      - fullmoon.ipa
