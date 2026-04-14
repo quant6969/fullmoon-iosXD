@@ -5,33 +5,41 @@ workflows:
     environment:
       xcode: latest
     scripts:
-      - name: Patch swift-transformers version
+      - name: Patch Swift dependencies
         script: |
-          # Находим строку с конкретной старой версией и меняем на нужную для MLX
+          # 1. Исправляем версию swift-transformers (ты уже знаешь зачем это)
           sed -i '' 's/minimumVersion = 0.1.17;/minimumVersion = 1.1.0;/g' fullmoon.xcodeproj/project.pbxproj
           
-          # Удаляем кэш разрешенных зависимостей, чтобы SPM скачал их заново с новыми правилами
+          # 2. Меняем ссылку на переехавший репозиторий библиотек MLX
+          sed -i '' 's|https://github.com/ml-explore/mlx-swift-examples/|https://github.com/ml-explore/mlx-swift-lm|g' fullmoon.xcodeproj/project.pbxproj
+          
+          # Очищаем кэш зависимостей
           find . -name "Package.resolved" -delete
+          
       - name: Resolve Swift packages
         script: |
           xcodebuild -resolvePackageDependencies \
             -project fullmoon.xcodeproj \
             -scheme fullmoon
+            
       - name: Build unsigned IPA
         script: |
-          xcodebuild archive \
+          # Собираем приложение без подписи
+          xcodebuild build \
             -project fullmoon.xcodeproj \
             -scheme fullmoon \
             -configuration Release \
             -sdk iphoneos \
             -destination 'generic/platform=iOS' \
-            -archivePath "$CM_BUILD_DIR/fullmoon.xcarchive" \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGN_IDENTITY="" \
-            CODE_SIGNING_REQUIRED=NO
+            CODE_SIGNING_REQUIRED=NO \
+            CONFIGURATION_BUILD_DIR="$CM_BUILD_DIR/build"
           
+          # Упаковываем результат в IPA
           mkdir -p Payload
-          cp -r "$CM_BUILD_DIR/fullmoon.xcarchive/Products/Applications/fullmoon.app" Payload/
+          cp -r "$CM_BUILD_DIR/build/fullmoon.app" Payload/
           zip -r fullmoon.ipa Payload
+          
     artifacts:
       - fullmoon.ipa
